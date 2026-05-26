@@ -5,6 +5,8 @@ from conftest import FORM_DATA, BAD_FORM_DATA
 
 pytestmark = pytest.mark.django_db
 
+NEW_COMMENT_TEXT = 'Обновлённый текст комментария'
+
 
 def test_anonymous_user_cannot_create_comment(client, news, detail_url):
     """Анонимный пользователь не может отправить комментарий."""
@@ -13,11 +15,19 @@ def test_anonymous_user_cannot_create_comment(client, news, detail_url):
     assert Comment.objects.count() == comments_count
 
 
-def test_authorized_user_can_create_comment(author_client, news, detail_url):
+def test_authorized_user_can_create_comment(
+        author_client, author, news, detail_url
+):
     """Авторизованный пользователь может отправить комментарий."""
     comments_count = Comment.objects.count()
     author_client.post(detail_url(news.id), data=FORM_DATA)
     assert Comment.objects.count() == comments_count + 1
+
+    # Проверяем, что комментарий создался с правильными полями
+    new_comment = Comment.objects.last()
+    assert new_comment.text == FORM_DATA['text']
+    assert new_comment.author == author
+    assert new_comment.news == news
 
 
 def test_comment_with_bad_words_not_created(author_client, news, detail_url):
@@ -31,19 +41,28 @@ def test_comment_with_bad_words_not_created(author_client, news, detail_url):
 
 def test_author_can_edit_own_comment(author_client, comment, edit_url):
     """Авторизованный пользователь может редактировать свои комментарии."""
-    new_text = 'Обновлённый текст комментария'
+    comment_id = comment.id
+    original_author = comment.author
+
     response = author_client.post(
-        edit_url(comment.id), data={'text': new_text}
+        edit_url(comment.id), data={'text': NEW_COMMENT_TEXT}
     )
     assert response.status_code == 302
-    comment.refresh_from_db()
-    assert comment.text == new_text
+
+    # Получаем свежую запись из базы
+    updated_comment = Comment.objects.get(id=comment_id)
+    assert updated_comment.text == NEW_COMMENT_TEXT
+    assert updated_comment.author == original_author
+    assert updated_comment.news == comment.news
+    assert Comment.objects.count() == 1
 
 
 def test_author_can_delete_own_comment(author_client, comment, delete_url):
     """Авторизованный пользователь может удалять свои комментарии."""
+    comments_count = Comment.objects.count()
     response = author_client.post(delete_url(comment.id))
     assert response.status_code == 302
+    assert Comment.objects.count() == comments_count - 1
     assert not Comment.objects.filter(id=comment.id).exists()
 
 
@@ -51,19 +70,40 @@ def test_cannot_edit_other_users_comment(
         not_author_client, comment, edit_url
 ):
     """Авторизованный пользователь не может редактировать чужие комментарии."""
+    comment_id = comment.id
     original_text = comment.text
+    original_author = comment.author
+    original_news = comment.news
+
     response = not_author_client.post(
         edit_url(comment.id), data={'text': 'Попытка'}
     )
     assert response.status_code == 404
-    comment.refresh_from_db()
-    assert comment.text == original_text
+
+    # Проверяем, что запись не изменилась
+    unchanged_comment = Comment.objects.get(id=comment_id)
+    assert unchanged_comment.text == original_text
+    assert unchanged_comment.author == original_author
+    assert unchanged_comment.news == original_news
+    assert Comment.objects.count() == 1
 
 
 def test_cannot_delete_other_users_comment(
         not_author_client, comment, delete_url
 ):
     """Авторизованный пользователь не может удалять чужие комментарии."""
+    comment_id = comment.id
+    original_text = comment.text
+    original_author = comment.author
+    original_news = comment.news
+    comments_count = Comment.objects.count()
+
     response = not_author_client.post(delete_url(comment.id))
     assert response.status_code == 404
-    assert Comment.objects.filter(id=comment.id).exists()
+    assert Comment.objects.count() == comments_count
+
+    # Проверяем, что запись не изменилась
+    unchanged_comment = Comment.objects.get(id=comment_id)
+    assert unchanged_comment.text == original_text
+    assert unchanged_comment.author == original_author
+    assert unchanged_comment.news == original_news

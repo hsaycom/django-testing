@@ -1,19 +1,8 @@
-from notes.models import Note
 from .base import BaseTestCase, NOTES_LIST_URL, NOTES_ADD_URL, NOTES_EDIT_URL
 
 
 class TestContent(BaseTestCase):
     """Тестирование контента страниц."""
-
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-        cls.note = Note.objects.create(
-            title='Заметка автора',
-            text='Текст заметки автора',
-            slug='author-note',
-            author=cls.author
-        )
 
     def test_note_in_context_on_list_page(self):
         """Заметка передаётся в object_list в словаре context."""
@@ -39,7 +28,7 @@ class TestContent(BaseTestCase):
         """На страницы создания и редактирования передаются формы."""
         urls = [
             ('notes:add', NOTES_ADD_URL),
-            ('notes:edit', NOTES_EDIT_URL(self.note.slug)),
+            ('notes:edit', NOTES_EDIT_URL),
         ]
         for name, url in urls:
             with self.subTest(name=name):

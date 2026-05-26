@@ -1,6 +1,5 @@
 from http import HTTPStatus
 
-from notes.models import Note
 from notes.tests.base import (
     BaseTestCase, NOTES_HOME_URL, NOTES_LIST_URL, NOTES_SUCCESS_URL,
     NOTES_ADD_URL, NOTES_DETAIL_URL, NOTES_EDIT_URL, NOTES_DELETE_URL,
@@ -10,16 +9,6 @@ from notes.tests.base import (
 
 class TestRoutes(BaseTestCase):
     """Тестирование доступности страниц."""
-
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-        cls.note = Note.objects.create(
-            title='Заголовок',
-            text='Текст заметки',
-            slug='note-slug',
-            author=cls.author
-        )
 
     def test_pages_availability_for_anonymous_user(self):
         """Главная страница доступна анонимному пользователю."""
@@ -41,9 +30,9 @@ class TestRoutes(BaseTestCase):
     def test_note_pages_availability_for_author(self):
         """Страницы заметки, удаления и редактирования доступны автору."""
         urls = [
-            ('notes:detail', NOTES_DETAIL_URL(self.note.slug)),
-            ('notes:edit', NOTES_EDIT_URL(self.note.slug)),
-            ('notes:delete', NOTES_DELETE_URL(self.note.slug)),
+            ('notes:detail', NOTES_DETAIL_URL),
+            ('notes:edit', NOTES_EDIT_URL),
+            ('notes:delete', NOTES_DELETE_URL),
         ]
         for name, url in urls:
             with self.subTest(name=name):
@@ -53,9 +42,9 @@ class TestRoutes(BaseTestCase):
     def test_note_pages_availability_for_other_user(self):
         """Другой пользователь получает 404 при попытке доступа к заметке."""
         urls = [
-            ('notes:detail', NOTES_DETAIL_URL(self.note.slug)),
-            ('notes:edit', NOTES_EDIT_URL(self.note.slug)),
-            ('notes:delete', NOTES_DELETE_URL(self.note.slug)),
+            ('notes:detail', NOTES_DETAIL_URL),
+            ('notes:edit', NOTES_EDIT_URL),
+            ('notes:delete', NOTES_DELETE_URL),
         ]
         for name, url in urls:
             with self.subTest(name=name):
@@ -68,9 +57,9 @@ class TestRoutes(BaseTestCase):
             ('notes:list', NOTES_LIST_URL),
             ('notes:success', NOTES_SUCCESS_URL),
             ('notes:add', NOTES_ADD_URL),
-            ('notes:detail', NOTES_DETAIL_URL(self.note.slug)),
-            ('notes:edit', NOTES_EDIT_URL(self.note.slug)),
-            ('notes:delete', NOTES_DELETE_URL(self.note.slug)),
+            ('notes:detail', NOTES_DETAIL_URL),
+            ('notes:edit', NOTES_EDIT_URL),
+            ('notes:delete', NOTES_DELETE_URL),
         ]
         for name, url in urls:
             with self.subTest(name=name):

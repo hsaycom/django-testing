@@ -12,6 +12,14 @@ class BaseTestCase(TestCase):
     def setUpTestData(cls):
         cls.author = User.objects.create_user(username='Автор')
         cls.reader = User.objects.create_user(username='Читатель')
+        # Создаём заметку для тестов
+        from notes.models import Note
+        cls.note = Note.objects.create(
+            title='Заголовок',
+            text='Текст заметки',
+            slug='note-slug',
+            author=cls.author
+        )
 
     def setUp(self):
         self.author_client = Client()
@@ -26,22 +34,9 @@ NOTES_HOME_URL = reverse('notes:home')
 NOTES_LIST_URL = reverse('notes:list')
 NOTES_ADD_URL = reverse('notes:add')
 NOTES_SUCCESS_URL = reverse('notes:success')
-
-
-def NOTES_DETAIL_URL(slug):
-    """URL страницы детали заметки."""
-    return reverse('notes:detail', args=(slug,))
-
-
-def NOTES_EDIT_URL(slug):
-    """URL страницы редактирования заметки."""
-    return reverse('notes:edit', args=(slug,))
-
-
-def NOTES_DELETE_URL(slug):
-    """URL страницы удаления заметки."""
-    return reverse('notes:delete', args=(slug,))
-
+NOTES_DETAIL_URL = reverse('notes:detail', args=('note-slug',))
+NOTES_EDIT_URL = reverse('notes:edit', args=('note-slug',))
+NOTES_DELETE_URL = reverse('notes:delete', args=('note-slug',))
 
 # Константы с URL для пользователей
 USERS_LOGIN_URL = reverse('users:login')
