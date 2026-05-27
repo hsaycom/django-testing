@@ -41,18 +41,15 @@ def test_comment_with_bad_words_not_created(author_client, news, detail_url):
 
 def test_author_can_edit_own_comment(author_client, comment, edit_url):
     """Авторизованный пользователь может редактировать свои комментарии."""
-    comment_id = comment.id
-    original_author = comment.author
-
     response = author_client.post(
         edit_url(comment.id), data={'text': NEW_COMMENT_TEXT}
     )
     assert response.status_code == 302
 
     # Получаем свежую запись из базы
-    updated_comment = Comment.objects.get(id=comment_id)
+    updated_comment = Comment.objects.get(id=comment.id)
     assert updated_comment.text == NEW_COMMENT_TEXT
-    assert updated_comment.author == original_author
+    assert updated_comment.author == comment.author
     assert updated_comment.news == comment.news
     assert Comment.objects.count() == 1
 
@@ -70,21 +67,16 @@ def test_cannot_edit_other_users_comment(
         not_author_client, comment, edit_url
 ):
     """Авторизованный пользователь не может редактировать чужие комментарии."""
-    comment_id = comment.id
-    original_text = comment.text
-    original_author = comment.author
-    original_news = comment.news
-
     response = not_author_client.post(
         edit_url(comment.id), data={'text': 'Попытка'}
     )
     assert response.status_code == 404
 
     # Проверяем, что запись не изменилась
-    unchanged_comment = Comment.objects.get(id=comment_id)
-    assert unchanged_comment.text == original_text
-    assert unchanged_comment.author == original_author
-    assert unchanged_comment.news == original_news
+    unchanged_comment = Comment.objects.get(id=comment.id)
+    assert unchanged_comment.text == comment.text
+    assert unchanged_comment.author == comment.author
+    assert unchanged_comment.news == comment.news
     assert Comment.objects.count() == 1
 
 
@@ -92,10 +84,6 @@ def test_cannot_delete_other_users_comment(
         not_author_client, comment, delete_url
 ):
     """Авторизованный пользователь не может удалять чужие комментарии."""
-    comment_id = comment.id
-    original_text = comment.text
-    original_author = comment.author
-    original_news = comment.news
     comments_count = Comment.objects.count()
 
     response = not_author_client.post(delete_url(comment.id))
@@ -103,7 +91,7 @@ def test_cannot_delete_other_users_comment(
     assert Comment.objects.count() == comments_count
 
     # Проверяем, что запись не изменилась
-    unchanged_comment = Comment.objects.get(id=comment_id)
-    assert unchanged_comment.text == original_text
-    assert unchanged_comment.author == original_author
-    assert unchanged_comment.news == original_news
+    unchanged_comment = Comment.objects.get(id=comment.id)
+    assert unchanged_comment.text == comment.text
+    assert unchanged_comment.author == comment.author
+    assert unchanged_comment.news == comment.news

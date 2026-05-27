@@ -22,6 +22,7 @@ class TestLogic(BaseTestCase):
             'text': 'Текст новой заметки',
             'slug': 'new-note-slug'
         }
+        # Для теста авто-генерации слага используем те же данные без slug
         cls.note_data_without_slug = {
             'title': 'Заголовок для автослага',
             'text': 'Текст заметки'
@@ -63,7 +64,7 @@ class TestLogic(BaseTestCase):
         second_note_data = {
             'title': 'Другая заметка',
             'text': 'Текст другой заметки',
-            'slug': self.note.slug  # такой же slug как у существующей заметки
+            'slug': self.note.slug
         }
         response = self.author_client.post(
             NOTES_ADD_URL, data=second_note_data
@@ -90,9 +91,8 @@ class TestLogic(BaseTestCase):
 
     def test_author_can_edit_own_note(self):
         """Пользователь может редактировать свои заметки."""
-        edit_url = NOTES_EDIT_URL
         response = self.author_client.post(
-            edit_url, data=self.note_data
+            NOTES_EDIT_URL, data=self.note_data
         )
         self.assertRedirects(response, NOTES_SUCCESS_URL)
 
@@ -104,16 +104,14 @@ class TestLogic(BaseTestCase):
 
     def test_author_can_delete_own_note(self):
         """Пользователь может удалять свои заметки."""
-        delete_url = NOTES_DELETE_URL
-        response = self.author_client.post(delete_url)
+        response = self.author_client.post(NOTES_DELETE_URL)
         self.assertRedirects(response, NOTES_SUCCESS_URL)
         self.assertEqual(Note.objects.count(), 0)
 
     def test_cannot_edit_other_users_note(self):
         """Пользователь не может редактировать чужие заметки."""
-        edit_url = NOTES_EDIT_URL
         response = self.reader_client.post(
-            edit_url, data=self.note_data
+            NOTES_EDIT_URL, data=self.note_data
         )
         self.assertEqual(response.status_code, 404)
 
@@ -125,8 +123,7 @@ class TestLogic(BaseTestCase):
 
     def test_cannot_delete_other_users_note(self):
         """Пользователь не может удалять чужие заметки."""
-        delete_url = NOTES_DELETE_URL
-        response = self.reader_client.post(delete_url)
+        response = self.reader_client.post(NOTES_DELETE_URL)
         self.assertEqual(response.status_code, 404)
         self.assertEqual(Note.objects.count(), 1)
 
